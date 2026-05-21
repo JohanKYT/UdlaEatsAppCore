@@ -5,7 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ffb988b2-876c-47d0-85ef-ed1846da223b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/udlaeats-core/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/udlaeats-core/src/main/resources/application.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/udlaeats-core/src/main/java/ec/edu/udla/udlaeats_core/entities/MenuItem.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/udlaeats-core/src/main/java/ec/edu/udla/udlaeats_core/entities/RestaurantInfo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/udlaeats-core/src/main/java/ec/edu/udla/udlaeats_core/entities/Role.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/udlaeats-core/src/main/java/ec/edu/udla/udlaeats_core/entities/User.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,18 +27,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "JohanKYT"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;JohanKYT&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/JohanKYT/UdlaEatsAppCore.git",
-    "accountId": "d6a14c7c-6405-4bb7-a1fc-326706cbe186"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/JohanKYT/UdlaEatsAppCore.git&quot;,
+    &quot;accountId&quot;: &quot;d6a14c7c-6405-4bb7-a1fc-326706cbe186&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
 }</component>
@@ -47,6 +51,7 @@
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "git-widget-placeholder": "main",
     "junie.onboarding.icon.badge.shown": "true",
@@ -57,7 +62,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "pnpm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "settings.editor.selected.configurable": "configurable.group.tools",
     "to.speed.mode.migration.done": "true",
     "vue.rearranger.settings.migration": "true"
   }
@@ -88,7 +93,8 @@
       <updated>1779380522632</updated>
       <workItem from="1779380523765" duration="3552000" />
       <workItem from="1779394212905" duration="3463000" />
-      <workItem from="1779400676280" duration="300000" />
+      <workItem from="1779400676280" duration="468000" />
+      <workItem from="1779401203488" duration="424000" />
     </task>
     <servers />
   </component>
