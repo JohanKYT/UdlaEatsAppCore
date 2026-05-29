@@ -1,0 +1,115 @@
+.adminMain {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+    font-family: system-ui, sans-serif;
+}
+
+.sidebarNav {
+    width: 260px;
+    background-color: #2c3e50;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 1rem;
+}
+
+.navHeader h2 {
+    font-size: 1.4rem;
+    margin: 0 0 1.5rem 0;
+    border-bottom: 2px solid #34495e;
+    padding-bottom: 1rem;
+}
+
+.navBtn, .activeBtn {
+    background: none;
+    border: none;
+    color: #bdc3c7;
+    padding: 0.8rem 1rem;
+    text-align: left;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.navBtn:hover {
+    background-color: #34495e;
+    color: white;
+}
+
+.activeBtn {
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+}
+
+.contentSection {
+    flex: 1;
+    padding: 2.5rem;
+}
+
+.requestCard {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-top: 1rem;
+}
+
+.inlineForm {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.approveBtn {
+    background-color: #27ae60;
+    color: white; border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.rejectBtn { background-color: #c0392b;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.adminForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    max-width: 400px;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.adminForm label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.adminForm input {
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.saveBtn {
+    background-color: #2980b9;
+    color: white;
+    border: none;
+    padding: 0.7rem;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}

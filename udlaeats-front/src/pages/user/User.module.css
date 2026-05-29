@@ -1,0 +1,92 @@
+.userMain {
+    min-height: 100vh;
+    background-color: #f3f4f6;
+    font-family: system-ui, sans-serif;
+}
+
+.topNav {
+    background-color: #ffffff;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.topNav h1 {
+    font-size: 1.5rem;
+    color: #d35400;
+    margin: 0;
+}
+.navLinks {
+    display: flex;
+    gap: 1rem;
+}
+
+.linkBtn, .activeLink {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.linkBtn {
+    color: #7f8c8d;
+}
+.linkBtn:hover {
+    color: #d35400;
+}
+.activeLink {
+    color: #d35400;
+    font-weight: bold;
+    border-bottom: 2px solid #d35400; }
+
+.contentBody {
+    padding: 2rem;
+}
+
+.orderCard {
+    background: white;
+    padding: 1.2rem;
+    border-radius: 8px;
+    border-left: 5px solid #f1c40f;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.profileForm {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.profileForm label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+}
+.profileForm input {
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.disabledLabel input {
+    background-color: #eaeded;
+    color: #7f8c8d;
+    cursor: not-allowed; }
+
+.updateBtn {
+    background-color: #d35400;
+    color: white; border: none;
+    padding: 0.7rem;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
