@@ -35,7 +35,6 @@ public class DataSeederConfig {
             }
             if (!userRepository.existsByEmail("admin.core@udla.edu.ec")) {
                 Role adminRole = roleRepository.findByRoleName("ADMIN");
-
                 User adminUser = new User();
                 adminUser.setName("Administrador General");
                 adminUser.setEmail("admin.core@udla.edu.ec");
