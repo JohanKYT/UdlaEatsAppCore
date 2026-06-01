@@ -1,4 +1,4 @@
-package ec.edu.udla.udlaeats_core.config;
+package ec.edu.udla.udlaeats_core.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

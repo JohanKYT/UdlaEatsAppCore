@@ -37,4 +37,8 @@ public class MenuItem {
 
     @Column(nullable = false)
     private int stockQuantity;
+
+    @Column(nullable = false, length = 500)
+    private String imageUrl;
+
 }

@@ -1,6 +1,6 @@
 package ec.edu.udla.udlaeats_core.controllers;
 
-import ec.edu.udla.udlaeats_core.config.LoginRequestDto;
+import ec.edu.udla.udlaeats_core.dtos.LoginRequestDto;
 import ec.edu.udla.udlaeats_core.dtos.RegisterRequestDto;
 import ec.edu.udla.udlaeats_core.entities.Role;
 import ec.edu.udla.udlaeats_core.entities.User;
