@@ -15,7 +15,7 @@ public class TrafficLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // A qué restaurante pertenece este registro de tráfico
+    // A que restaurante pertenece este registro
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_id", nullable = false)
     private RestaurantInfo restaurant;
