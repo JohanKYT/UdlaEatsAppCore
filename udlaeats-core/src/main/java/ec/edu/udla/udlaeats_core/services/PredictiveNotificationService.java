@@ -10,10 +10,9 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +34,7 @@ public class PredictiveNotificationService {
     public void forceDemoExecution() {
         analyzePatternsAndNotify(true);
     }
+
     public void analyzePatternsAndNotify(boolean isDemoMode) {
         DayOfWeek today = LocalDate.now().getDayOfWeek();
         LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.MINUTES);
@@ -55,10 +55,10 @@ public class PredictiveNotificationService {
 
             String predictedTraffic = predictTrafficForToday(restaurantId, today);
 
-            int minutesAhead = predictedTraffic.equalsIgnoreCase("HIGH") ? 30 : 15;
+            int minutesAhead = predictedTraffic.equalsIgnoreCase("HIGH") ? 1 : 2;
             LocalTime notificationTime = habitualTime.minusMinutes(minutesAhead);
 
-            if (isDemoMode || currentTime.equals(notificationTime)) {
+
                 String urgencyPhrase = predictedTraffic.equalsIgnoreCase("LOW")
                         ? "¡El restaurante está casi vacío, córrele!"
                         : "Va a haber fila pronto, anticípate.";
@@ -76,7 +76,7 @@ public class PredictiveNotificationService {
                 System.out.println(
                         "Notificación predictiva enviada a: " + user.getEmail() + " | Modo Demo: " + isDemoMode
                 );
-            }
+
         }
     }
     private List<String> getTopTwoItems(List<OrderLog> history) {
@@ -120,13 +120,20 @@ public class PredictiveNotificationService {
     }
 
     private RestaurantInfo getMostFrequentRestaurant(List<OrderLog> history) {
-        Map<RestaurantInfo, Integer> restCount = new HashMap<>();
+        Map<Long, Integer> restCount = new HashMap<>();
+        Map<Long, RestaurantInfo> restLookup = new HashMap<>();
+
         for (OrderLog log : history) {
-            restCount.put(log.getRestaurant(), restCount.getOrDefault(log.getRestaurant(), 0) + 1);
+            Long id = log.getRestaurant().getId();
+            restCount.put(id, restCount.getOrDefault(id, 0) + 1);
+            restLookup.put(id, log.getRestaurant());
         }
-        return restCount.entrySet().stream()
+
+        Long mostFrequentId = restCount.entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
-                .orElse(history.getFirst().getRestaurant());
+                .orElse(history.get(0).getRestaurant().getId());
+
+        return restLookup.get(mostFrequentId);
     }
 }
