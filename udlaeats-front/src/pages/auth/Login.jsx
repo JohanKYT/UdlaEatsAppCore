@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import styles from './Auth.module.css';
 
 export default function Login() {
+    const navigate = useNavigate();
     const [credentials, setCredentials] = useState({
         email: '',
         password: ''
@@ -12,10 +14,33 @@ export default function Login() {
         setCredentials({ ...credentials, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Enviando login al back...", credentials);
-        // Luego conectamos con Axios
+        try {
+            const response = await api.post('/auth/login', credentials);
+            const userData = response.data;
+
+            localStorage.setItem('udlaeats_user', JSON.stringify(userData));
+
+            alert("✅ " + userData.message + ", " + userData.name);
+
+            const userRole = userData.role;
+
+            if (userRole === "ADMIN") {
+                navigate('/admin');
+            } else if (userRole === "RESTAURANT") {
+                navigate('/restaurant');
+            } else {
+                navigate('/user');
+            }
+
+        } catch (error) {
+            if (error.response) {
+                alert("❌ " + error.response.data);
+            } else {
+                alert("❌ Error al conectar con el servidor.");
+            }
+        }
     };
 
     return (
@@ -34,7 +59,7 @@ export default function Login() {
                                 name="email"
                                 className={styles.authInput}
                                 placeholder="tu.nombre@udla.edu.ec"
-                                pattern="^[\w-\.]+@udla\.edu\.ec$"
+                                pattern="^[^@\s]+@udla\.edu\.ec$"
                                 title="Debe ser un correo terminado en @udla.edu.ec"
                                 required
                                 value={credentials.email}

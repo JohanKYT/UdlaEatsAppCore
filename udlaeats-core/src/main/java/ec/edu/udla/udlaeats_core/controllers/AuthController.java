@@ -26,6 +26,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequestDto request) {
+        String normalizedEmail = request.getEmail().toLowerCase();
 
         if (userRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity.badRequest().body("El correo ya está registrado.");
@@ -36,10 +37,18 @@ public class AuthController {
 
         User newUser = new User();
         newUser.setName(request.getName());
-        newUser.setEmail(request.getEmail());
+        newUser.setEmail(normalizedEmail);
         newUser.setPassword(request.getPassword()); // Nota: Encriptar deja la pereza.
+        newUser.setPhone(request.getPhone());
+        newUser.setCampus(request.getCampus());
         newUser.setRole(assignedRole);
         newUser.setPenaltyPoints(0);
+
+        if (assignedRole.getRoleName().equals("RESTAURANT")) {
+            newUser.setAccountStatus("PENDING");
+        } else {
+            newUser.setAccountStatus("APPROVED");
+        }
 
         userRepository.save(newUser);
 
@@ -47,8 +56,9 @@ public class AuthController {
     }
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@Valid @RequestBody LoginRequestDto request) {
+        String normalizedEmail = request.getEmail().toLowerCase();
 
-        User user = userRepository.findByEmail(request.getEmail());
+        User user = userRepository.findByEmail(normalizedEmail);
 
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("El usuario no existe o el correo es incorrecto.");
@@ -58,11 +68,21 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Contraseña incorrecta.");
         }
 
+        if (user.getAccountStatus().equals("PENDING")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("⏳ Tu cuenta está en revisión. Aún no ha sido aprobada por el Administrador.");
+        }
+
+        if (user.getAccountStatus().equals("REJECTED")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("❌ Solicitud rechazada. Motivo: " + user.getRejectionReason());
+        }
+
         return ResponseEntity.ok(Map.of(
                 "message", "Login exitoso",
                 "userId", user.getId(),
                 "name", user.getName(),
-                "role", user.getRole().getRoleName()
+                "role", user.getRole().getRoleName(),
+                "phone", user.getPhone() != null ? user.getPhone() : "",
+                "campus", user.getCampus() != null ? user.getCampus() : ""
         ));
     }
 }

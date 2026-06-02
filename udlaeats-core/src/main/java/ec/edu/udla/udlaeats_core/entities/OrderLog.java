@@ -15,7 +15,7 @@ public class OrderLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER) // Cambiado a EAGER para traer datos del usuario rápido en la cola
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -39,5 +39,8 @@ public class OrderLog {
     // Hora a la que suele hacer el pedido
     @Column(nullable = false)
     private LocalTime orderTime;
+
+    @Column(nullable = false)
+    private String status = "PENDING";
 
 }

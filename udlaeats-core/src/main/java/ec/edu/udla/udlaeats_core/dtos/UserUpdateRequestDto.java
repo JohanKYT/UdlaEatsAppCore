@@ -8,4 +8,8 @@ public class UserUpdateRequestDto {
     @NotBlank(message = "El nombre no puede estar vacío")
     private String name;
     private String newPassword;
+    private String phone;
+    private String campus;
+    private String openingTime;
+    private String closingTime;
 }

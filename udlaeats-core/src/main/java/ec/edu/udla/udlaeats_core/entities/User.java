@@ -35,4 +35,22 @@ public class User {
 
     @Column(nullable = false, columnDefinition = "int default 0")
     private int penaltyPoints;
+
+    @Column(nullable = false)
+    private String accountStatus = "APPROVED";
+
+    @Column(length = 500)
+    private String rejectionReason;
+
+    @Column(length = 15)
+    private String phone;
+
+    @Column(length = 100)
+    private String campus;
+
+    @Column
+    private String openingTime = "07:00";
+
+    @Column
+    private String closingTime = "19:30";
 }

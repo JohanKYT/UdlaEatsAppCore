@@ -10,4 +10,5 @@ import java.util.List;
 public interface RestaurantInfoRepository extends JpaRepository<RestaurantInfo, Long> {
     List<RestaurantInfo> findByIsVerifiedByAdminFalse();
     List<RestaurantInfo> findByIsVerifiedByAdminTrue();
+    RestaurantInfo findByUserId(Long userId);
 }

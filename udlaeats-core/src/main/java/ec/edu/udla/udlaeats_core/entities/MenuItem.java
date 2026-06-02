@@ -32,6 +32,10 @@ public class MenuItem {
     @Column(nullable = false, precision = 5, scale = 2)
     private BigDecimal price;
 
+    @NotBlank(message = "La categoria es obligatoria")
+    @Column(nullable = false)
+    private String category;
+
     @Column(nullable = false)
     private boolean isAvailable = true;
 

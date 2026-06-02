@@ -28,7 +28,14 @@ public class PredictiveNotificationService {
     private TrafficLogRepository trafficLogRepository;
 
     @Scheduled(cron = "0 * * * * *")
-    public void analyzePatternsAndNotify() {
+    public void scheduledAnalyze() {
+        analyzePatternsAndNotify(false);
+    }
+
+    public void forceDemoExecution() {
+        analyzePatternsAndNotify(true);
+    }
+    public void analyzePatternsAndNotify(boolean isDemoMode) {
         DayOfWeek today = LocalDate.now().getDayOfWeek();
         LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.MINUTES);
         List<OrderLog> historicalOrders = orderLogRepository.findByOrderDayOfWeek(today);
@@ -51,14 +58,13 @@ public class PredictiveNotificationService {
             int minutesAhead = predictedTraffic.equalsIgnoreCase("HIGH") ? 30 : 15;
             LocalTime notificationTime = habitualTime.minusMinutes(minutesAhead);
 
-            if (currentTime.equals(notificationTime)) {
+            if (isDemoMode || currentTime.equals(notificationTime)) {
                 String urgencyPhrase = predictedTraffic.equalsIgnoreCase("LOW")
                         ? "¡El restaurante está casi vacío, córrele!"
                         : "Va a haber fila pronto, anticípate.";
 
-                String alertMessage = "¡Hola " + user.getName() + "! El restaurante está abierto. Entre las "
-                        + habitualTime + " y las " + habitualTime.plusMinutes(30) + " sueles pedir "
-                        + itemsString + " en " + favoriteRestaurant.getCampusLocation() + ". " + urgencyPhrase;
+                String alertMessage = "¡Hola " + user.getName() + "! El restaurante está abierto. Sueles pedir "
+                        + itemsString + " en " + favoriteRestaurant.getCampusLocation() + " a esta hora. " + urgencyPhrase;
 
                 Notification newNotification = new Notification();
                 newNotification.setUser(user);
@@ -68,7 +74,7 @@ public class PredictiveNotificationService {
                 notificationRepository.save(newNotification);
 
                 System.out.println(
-                        "Notificación predictiva enviada a: " + user.getEmail() + " | Sugerencia: " + itemsString
+                        "Notificación predictiva enviada a: " + user.getEmail() + " | Modo Demo: " + isDemoMode
                 );
             }
         }

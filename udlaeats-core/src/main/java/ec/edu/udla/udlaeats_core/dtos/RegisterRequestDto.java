@@ -19,6 +19,9 @@ public class RegisterRequestDto {
     @NotBlank(message = "La contraseña es obligatoria")
     private String password;
 
+    private String phone;
+    private String campus;
+
     @NotNull(message = "El rol es obligatorio")
     private Long roleId; // Esto vendrá del Dropdown en el Frontend
 }

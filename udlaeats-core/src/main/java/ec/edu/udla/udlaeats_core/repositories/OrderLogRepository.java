@@ -13,6 +13,9 @@ import java.util.List;
 public interface OrderLogRepository extends JpaRepository<OrderLog, Long> {
     List<OrderLog> findByOrderDayOfWeek(DayOfWeek dayOfWeek);
     List<OrderLog> findByUserIdAndOrderDayOfWeek(Long userId, DayOfWeek dayOfWeek);
+    List<OrderLog> findByUserIdOrderByOrderDateDescOrderTimeDesc(Long userId);
+    List<OrderLog> findByRestaurantIdAndStatusOrderByOrderDateAscOrderTimeAsc(Long restaurantId, String status);
     @Query("SELECT DISTINCT o.user FROM OrderLog o WHERE o.orderDayOfWeek = :dayOfWeek")
     List<User> findDistinctUsersByOrderDayOfWeek(@Param("dayOfWeek") DayOfWeek dayOfWeek);
+
 }

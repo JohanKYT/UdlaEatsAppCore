@@ -28,6 +28,8 @@ public class UserController {
         if (user == null) return ResponseEntity.notFound().build();
 
         user.setName(request.getName());
+        user.setPhone(request.getPhone());
+        user.setCampus(request.getCampus());
 
         if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
             user.setPassword(request.getNewPassword()); // Otra vez, tocará encriptar luego
@@ -40,5 +42,16 @@ public class UserController {
     @GetMapping("/{userId}/notifications")
     public ResponseEntity<List<Notification>> getMyNotifications(@PathVariable Long userId) {
         return ResponseEntity.ok(notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId));
+    }
+
+    @PatchMapping("/notifications/{notifId}/convert")
+    public ResponseEntity<?> convertNotification(@PathVariable Long notifId) {
+        Notification notif = notificationRepository.findById(notifId).orElse(null);
+        if (notif != null) {
+            notif.setConverted(true);
+            notif.setRead(true);
+            notificationRepository.save(notif);
+        }
+        return ResponseEntity.ok().build();
     }
 }
