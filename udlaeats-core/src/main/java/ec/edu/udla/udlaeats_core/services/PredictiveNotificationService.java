@@ -7,10 +7,8 @@ import ec.edu.udla.udlaeats_core.repositories.TrafficLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import java.time.DayOfWeek;
-import java.time.LocalTime;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
+
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,8 +35,8 @@ public class PredictiveNotificationService {
 
     public void analyzePatternsAndNotify(boolean isDemoMode) {
         DayOfWeek today = LocalDate.now().getDayOfWeek();
-        LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.MINUTES);
-        List<OrderLog> historicalOrders = orderLogRepository.findByOrderDayOfWeek(today);
+        LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.MINUTES);
+
         List<User> usersToAnalyze = orderLogRepository.findDistinctUsersByOrderDayOfWeek(today);
 
         for (User user : usersToAnalyze) {
@@ -46,37 +44,48 @@ public class PredictiveNotificationService {
 
             if (userHistory.isEmpty()) continue;
 
-            List<String> top2Items = getTopTwoItems(userHistory);
-            String itemsString = String.join(" o ", top2Items);
-
             LocalTime habitualTime = getHabitualTimeBlock(userHistory);
             RestaurantInfo favoriteRestaurant = getMostFrequentRestaurant(userHistory);
             Long restaurantId = favoriteRestaurant.getId();
 
             String predictedTraffic = predictTrafficForToday(restaurantId, today);
-
             int minutesAhead = predictedTraffic.equalsIgnoreCase("HIGH") ? 1 : 2;
             LocalTime notificationTime = habitualTime.minusMinutes(minutesAhead);
 
+            boolean isTimeToNotify = isDemoMode || now.equals(notificationTime);
 
-                String urgencyPhrase = predictedTraffic.equalsIgnoreCase("LOW")
-                        ? "¡El restaurante está casi vacío, córrele!"
-                        : "Va a haber fila pronto, anticípate.";
+            if (isTimeToNotify) {
+                LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+                LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
 
-                String alertMessage = "¡Hola " + user.getName() + "! El restaurante está abierto. Sueles pedir "
-                        + itemsString + " en " + favoriteRestaurant.getCampusLocation() + " a esta hora. " + urgencyPhrase;
+                boolean alreadySentToday = notificationRepository.existsByUserIdAndCreatedAtBetween(user.getId(), startOfDay, endOfDay);
 
-                Notification newNotification = new Notification();
-                newNotification.setUser(user);
-                newNotification.setMessage(alertMessage);
-                newNotification.setRecommendedItems(itemsString);
-                newNotification.setConverted(false);
-                notificationRepository.save(newNotification);
+                if (!alreadySentToday) {
+                    List<String> top2Items = getTopTwoItems(userHistory);
+                    String itemsString = String.join(" o ", top2Items);
 
-                System.out.println(
-                        "Notificación predictiva enviada a: " + user.getEmail() + " | Modo Demo: " + isDemoMode
-                );
+                    String urgencyPhrase = predictedTraffic.equalsIgnoreCase("LOW")
+                            ? "¡El restaurante está casi vacío, córrele!"
+                            : "Va a haber fila pronto, anticípate.";
 
+                    String alertMessage = "¡Hola " + user.getName() + "! El restaurante está abierto. Sueles pedir "
+                            + itemsString + " en " + favoriteRestaurant.getCampusLocation() + " a esta hora. " + urgencyPhrase;
+
+                    Notification newNotification = new Notification();
+                    newNotification.setUser(user);
+                    newNotification.setMessage(alertMessage);
+                    newNotification.setRecommendedItems(itemsString);
+                    newNotification.setConverted(false);
+                    newNotification.setCreatedAt(LocalDateTime.now());
+
+                    notificationRepository.save(newNotification);
+
+                    System.out.println("Notificación predictiva enviada a: " + user.getEmail() + " | Modo Demo: " + isDemoMode);
+                } else {
+                    // Solo para debug en consola (puedes borrar esta línea luego)
+                    System.out.println(user.getEmail() + " ya recibió su notificación predictiva hoy.");
+                }
+            }
         }
     }
     private List<String> getTopTwoItems(List<OrderLog> history) {
