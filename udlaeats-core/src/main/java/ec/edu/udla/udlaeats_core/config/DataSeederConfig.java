@@ -1,4 +1,4 @@
-package ec.edu.udla.udlaeats_core.config;
+/*package ec.edu.udla.udlaeats_core.config;
 
 import ec.edu.udla.udlaeats_core.entities.Role;
 import ec.edu.udla.udlaeats_core.entities.User;
@@ -48,3 +48,4 @@ public class DataSeederConfig {
         };
     }
 }
+*/
