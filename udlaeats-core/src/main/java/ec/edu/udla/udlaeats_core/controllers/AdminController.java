@@ -81,4 +81,8 @@ public class AdminController {
         predictiveService.forceDemoExecution();
         return ResponseEntity.ok("Motor Predictivo forzado. Notificaciones enviadas.");
     }
+    @GetMapping("/predictive-queue")
+    public ResponseEntity<List<ec.edu.udla.udlaeats_core.dtos.PredictiveQueueItemDto>> getPredictiveQueue() {
+        return ResponseEntity.ok(predictiveService.getPredictiveQueuePreview());
+    }
 }

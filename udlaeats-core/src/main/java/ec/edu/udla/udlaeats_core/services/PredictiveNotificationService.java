@@ -110,6 +110,7 @@ public class PredictiveNotificationService {
             }
         }
     }
+
     private List<String> getTopTwoItems(List<OrderLog> history) {
         Map<String, Integer> frequencyMap = new HashMap<>();
         for (OrderLog log : history) {
@@ -166,5 +167,39 @@ public class PredictiveNotificationService {
                 .orElse(history.get(0).getRestaurant().getId());
 
         return restLookup.get(mostFrequentId);
+    }
+    public List<ec.edu.udla.udlaeats_core.dtos.PredictiveQueueItemDto> getPredictiveQueuePreview() {
+        DayOfWeek today = LocalDate.now().getDayOfWeek();
+        List<User> usersToAnalyze = orderLogRepository.findDistinctUsersByOrderDayOfWeek(today);
+        List<ec.edu.udla.udlaeats_core.dtos.PredictiveQueueItemDto> queue = new ArrayList<>();
+
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
+
+        for (User user : usersToAnalyze) {
+            List<OrderLog> userHistory = orderLogRepository.findByUserIdAndOrderDayOfWeek(user.getId(), today);
+            if (userHistory.isEmpty()) continue;
+
+            LocalTime habitualTime = getHabitualTimeBlock(userHistory);
+            RestaurantInfo favoriteRestaurant = getMostFrequentRestaurant(userHistory);
+            Long restaurantId = favoriteRestaurant.getId();
+
+            String predictedTraffic = predictTrafficForToday(restaurantId, today);
+            int minutesAhead = predictedTraffic.equalsIgnoreCase("HIGH") ? 1 : 2;
+            LocalTime notificationTime = habitualTime.minusMinutes(minutesAhead);
+
+            boolean alreadySentToday = notificationRepository.existsByUserIdAndCreatedAtBetween(user.getId(), startOfDay, endOfDay);
+
+            ec.edu.udla.udlaeats_core.dtos.PredictiveQueueItemDto dto = new ec.edu.udla.udlaeats_core.dtos.PredictiveQueueItemDto();
+            dto.setUserId(user.getId());
+            dto.setUserName(user.getName());
+            dto.setUserEmail(user.getEmail());
+            dto.setTargetTime(notificationTime.toString()); // Extraemos la hora exacta (Ej: "14:28")
+            dto.setAlreadySent(alreadySentToday);
+
+            queue.add(dto);
+        }
+        queue.sort(Comparator.comparing(ec.edu.udla.udlaeats_core.dtos.PredictiveQueueItemDto::getTargetTime));
+        return queue;
     }
 }

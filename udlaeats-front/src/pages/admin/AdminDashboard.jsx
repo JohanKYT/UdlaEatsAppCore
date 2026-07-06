@@ -12,7 +12,7 @@ export default function AdminDashboard() {
     const [usersList, setUsersList] = useState([]);
     const [systemStats, setSystemStats] = useState(null);
 
-    // NUEVOS ESTADOS PARA EL MONITOR PREDICTIVO DINÁMICO
+    // ESTADO PARA LA COLA PREDICTIVA REAL
     const [predictiveQueue, setPredictiveQueue] = useState([]);
     const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -22,7 +22,7 @@ export default function AdminDashboard() {
 
     const navigate = useNavigate();
 
-    // Reloj interno que se actualiza cada segundo para la cuenta regresiva
+    // Reloj interno que se actualiza cada segundo para restar la cuenta regresiva
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
         return () => clearInterval(timer);
@@ -57,28 +57,36 @@ export default function AdminDashboard() {
             }
         };
 
+        // LÓGICA PARA CONSUMIR LA MATEMÁTICA REAL DEL BACKEND
+        const fetchPredictiveQueue = async () => {
+            try {
+                const response = await api.get('/admin/predictive-queue');
+                const queueData = response.data;
+
+                // Convertimos la hora que mandó Java ("14:28") a un Timestamp real de JS para hoy
+                const queueWithTimestamps = queueData.map(item => {
+                    const timeParts = item.targetTime.split(':');
+                    const targetDate = new Date();
+                    targetDate.setHours(parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), timeParts[2] ? parseInt(timeParts[2], 10) : 0, 0);
+
+                    return { ...item, targetTimestamp: targetDate.getTime() };
+                });
+
+                setPredictiveQueue(queueWithTimestamps);
+            } catch (error) {
+                console.error("Error al cargar la cola predictiva real", error);
+            }
+        };
+
         if (activeTab === 'notifications') {
             fetchPendingRestaurants();
+            fetchPredictiveQueue(); // <-- Llamamos al backend real
         } else if (activeTab === 'users' || activeTab === 'restaurants') {
             fetchAllUsers();
         } else if (activeTab === 'reports') {
             fetchSystemStats();
         }
     }, [activeTab]);
-
-    // Simulación de la cola en tiempo real al cargar los usuarios
-    useEffect(() => {
-        if (usersList.length > 0 && predictiveQueue.length === 0) {
-            const students = usersList.filter(u => u.role?.roleName === 'USER').slice(0, 3);
-
-            // Les asignamos tiempos de espera (ej: 1, 2 y 3 minutos desde que abres la pestaña)
-            const queue = students.map((u, index) => ({
-                ...u,
-                targetTime: Date.now() + ((index + 1) * 60000) + (Math.random() * 30000)
-            }));
-            setPredictiveQueue(queue);
-        }
-    }, [usersList, predictiveQueue.length]);
 
     const togglePasswordVisibility = (userId) => {
         setVisiblePasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
@@ -152,12 +160,19 @@ export default function AdminDashboard() {
     const handleForcePredictive = async () => {
         try {
             await api.post('/admin/force-predictive-engine');
-
-            // Forzamos a que todos en la cola visual cambien a "Enviado" automáticamente
-            const forcedQueue = predictiveQueue.map(u => ({...u, targetTime: Date.now() - 1000}));
-            setPredictiveQueue(forcedQueue);
-
             alert("🚀 ¡Motor Predictivo ejecutado! Las notificaciones han sido generadas.");
+
+            // Recargamos la tabla para que lea que "alreadySent" ahora es true
+            if (activeTab === 'notifications') {
+                const response = await api.get('/admin/predictive-queue');
+                const queueData = response.data.map(item => {
+                    const timeParts = item.targetTime.split(':');
+                    const targetDate = new Date();
+                    targetDate.setHours(parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), timeParts[2] ? parseInt(timeParts[2], 10) : 0, 0);
+                    return { ...item, targetTimestamp: targetDate.getTime() };
+                });
+                setPredictiveQueue(queueData);
+            }
         } catch (error) {
             alert("❌ Error al ejecutar el motor.");
         }
@@ -323,46 +338,48 @@ export default function AdminDashboard() {
                             </button>
                         </header>
 
-                        {/* EL MONITOR PREDICTIVO VISUAL PARA LA DEFENSA (AHORA ES DINÁMICO) */}
+                        {/* EL MONITOR PREDICTIVO VISUAL PARA LA DEFENSA (CONECTADO A LA MATEMÁTICA REAL) */}
                         <article style={{ background: '#f8f9fa', padding: '1.5rem', borderRadius: '8px', borderLeft: '5px solid #8e44ad', marginBottom: '2rem' }}>
                             <h4 style={{ color: '#8e44ad', marginTop: 0 }}>📡 Monitor de Cola Predictiva (Tiempo Real)</h4>
-                            <p style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>El algoritmo está evaluando los hábitos de consumo de los siguientes usuarios para enviar sugerencias:</p>
+                            <p style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>El algoritmo inteligente ha calculado que los siguientes usuarios están próximos a realizar su consumo habitual de hoy:</p>
 
                             <table className={styles.adminTable} style={{ marginTop: '1rem', background: 'white' }}>
                                 <thead>
                                 <tr>
                                     <th>Usuario Objetivo</th>
-                                    <th>Estado del Motor</th>
+                                    <th>Hora Programada</th>
                                     <th>Tiempo Restante</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 {predictiveQueue.length === 0 ? (
-                                    <tr><td colSpan="3" style={{textAlign: 'center'}}>No hay notificaciones en cola.</td></tr>
+                                    <tr><td colSpan="3" style={{textAlign: 'center', padding: '2rem'}}>No hay patrones de consumo identificados para el día de hoy, o todos los usuarios ya fueron notificados.</td></tr>
                                 ) : (
                                     predictiveQueue.map((u) => {
-                                        const timeLeft = Math.max(0, u.targetTime - currentTime);
-                                        const isSent = timeLeft <= 0;
+                                        // La cuenta regresiva real basada en la diferencia de horas
+                                        const timeLeft = Math.max(0, u.targetTimestamp - currentTime);
 
-                                        const minutes = Math.floor(timeLeft / 60000);
+                                        // Si ya se envió hoy o la cuenta llegó a cero, está enviado
+                                        const isSent = u.alreadySent || timeLeft <= 0;
+
+                                        // Matemáticas de conversión a formato visual
+                                        const totalMinutes = Math.floor(timeLeft / 60000);
+                                        const hours = Math.floor(totalMinutes / 60);
+                                        const minutes = totalMinutes % 60;
                                         const seconds = Math.floor((timeLeft % 60000) / 1000);
 
                                         return (
-                                            <tr key={u.id}>
-                                                <td><strong>{u.name}</strong><br/><small>{u.email}</small></td>
+                                            <tr key={u.userId}>
+                                                <td><strong>{u.userName}</strong><br/><small>{u.userEmail}</small></td>
+                                                <td>
+                                                    <span style={{ color: '#34495e', fontWeight: 'bold' }}>🕒 {u.targetTime}</span>
+                                                </td>
                                                 <td>
                                                     {isSent ? (
                                                         <span style={{ color: '#27ae60', fontWeight: 'bold' }}>¡Notificación Enviada! ✔️</span>
                                                     ) : (
-                                                        <span style={{ color: '#f39c12', fontWeight: 'bold' }}>Calculando variables... ⚙️</span>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    {isSent ? (
-                                                        <span style={{ color: '#7f8c8d' }}>Completado</span>
-                                                    ) : (
                                                         <span style={{fontFamily: 'monospace', fontSize: '1.1rem', color: '#e74c3c'}}>
-                                                            ⏳ {minutes}m {seconds < 10 ? '0' : ''}{seconds}s
+                                                            ⏳ {hours > 0 ? `${hours}h ` : ''}{minutes}m {seconds < 10 ? '0' : ''}{seconds}s
                                                         </span>
                                                     )}
                                                 </td>
@@ -373,7 +390,7 @@ export default function AdminDashboard() {
                                 </tbody>
                             </table>
                             <small style={{display: 'block', marginTop: '1rem', color: '#95a5a6'}}>
-                                * Nota: Al presionar "Disparar Alertas", se ignorará la cuenta regresiva y se enviarán notificaciones push a todos los usuarios con coincidencias en el patrón del día actual.
+                                * Nota: Al presionar "Disparar Alertas", se ignorará la cola y se enviarán notificaciones push de inmediato.
                             </small>
                         </article>
 
