@@ -232,6 +232,9 @@ export default function RestaurantDashboard() {
                                         </section>
 
                                         <menu style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: 0, margin: 0}}>
+                                            <button onClick={() => handleUpdateOrderStatus(order.id, 'PREPARING')}>
+                                                Empezar a Preparar
+                                            </button>
                                             <button onClick={() => handleUpdateOrderStatus(order.id, 'COMPLETED')} style={{background: '#27ae60', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold'}}>
                                                 Entregado ✔️
                                             </button>

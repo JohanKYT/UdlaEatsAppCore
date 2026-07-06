@@ -265,7 +265,7 @@ export default function UserDashboard() {
                         <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '600px' }}>
                             {myOrders.length === 0 ? <p>Aún no has realizado ningún pedido.</p> : (
                                 myOrders.map(order => (
-                                    <article key={order.id} className={styles.orderCard} style={{borderLeft: order.status === 'PENDING' ? '5px solid #f1c40f' : order.status === 'COMPLETED' ? '5px solid #27ae60' : '5px solid #e74c3c'}}>
+                                    <article key={order.id} className={styles.orderCard} style={{borderLeft: order.status === 'PENDING' ? '5px solid #f1c40f' : order.status === 'PREPARING' ? '5px solid #3498db' : order.status === 'COMPLETED' ? '5px solid #27ae60' : '5px solid #e74c3c'}}>
                                         <header style={{display: 'flex', justifyContent: 'space-between'}}>
                                             <h4>{order.itemName}</h4>
                                             <span style={{fontWeight: 'bold', color: order.status === 'PENDING' ? '#f39c12' : order.status === 'COMPLETED' ? '#27ae60' : '#e74c3c'}}>

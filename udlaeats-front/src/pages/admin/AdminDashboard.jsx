@@ -12,12 +12,23 @@ export default function AdminDashboard() {
     const [usersList, setUsersList] = useState([]);
     const [systemStats, setSystemStats] = useState(null);
 
+    // NUEVOS ESTADOS PARA EL MONITOR PREDICTIVO DINÁMICO
+    const [predictiveQueue, setPredictiveQueue] = useState([]);
+    const [currentTime, setCurrentTime] = useState(Date.now());
+
     // Estados de UI
     const [visiblePasswords, setVisiblePasswords] = useState({});
     const [editingUser, setEditingUser] = useState(null);
 
     const navigate = useNavigate();
 
+    // Reloj interno que se actualiza cada segundo para la cuenta regresiva
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    // API Calls
     useEffect(() => {
         const fetchPendingRestaurants = async () => {
             try {
@@ -46,7 +57,6 @@ export default function AdminDashboard() {
             }
         };
 
-        // Lógica de ruteo interno
         if (activeTab === 'notifications') {
             fetchPendingRestaurants();
         } else if (activeTab === 'users' || activeTab === 'restaurants') {
@@ -55,6 +65,20 @@ export default function AdminDashboard() {
             fetchSystemStats();
         }
     }, [activeTab]);
+
+    // Simulación de la cola en tiempo real al cargar los usuarios
+    useEffect(() => {
+        if (usersList.length > 0 && predictiveQueue.length === 0) {
+            const students = usersList.filter(u => u.role?.roleName === 'USER').slice(0, 3);
+
+            // Les asignamos tiempos de espera (ej: 1, 2 y 3 minutos desde que abres la pestaña)
+            const queue = students.map((u, index) => ({
+                ...u,
+                targetTime: Date.now() + ((index + 1) * 60000) + (Math.random() * 30000)
+            }));
+            setPredictiveQueue(queue);
+        }
+    }, [usersList, predictiveQueue.length]);
 
     const togglePasswordVisibility = (userId) => {
         setVisiblePasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
@@ -128,6 +152,11 @@ export default function AdminDashboard() {
     const handleForcePredictive = async () => {
         try {
             await api.post('/admin/force-predictive-engine');
+
+            // Forzamos a que todos en la cola visual cambien a "Enviado" automáticamente
+            const forcedQueue = predictiveQueue.map(u => ({...u, targetTime: Date.now() - 1000}));
+            setPredictiveQueue(forcedQueue);
+
             alert("🚀 ¡Motor Predictivo ejecutado! Las notificaciones han sido generadas.");
         } catch (error) {
             alert("❌ Error al ejecutar el motor.");
@@ -294,7 +323,7 @@ export default function AdminDashboard() {
                             </button>
                         </header>
 
-                        {/* EL MONITOR PREDICTIVO VISUAL PARA LA DEFENSA */}
+                        {/* EL MONITOR PREDICTIVO VISUAL PARA LA DEFENSA (AHORA ES DINÁMICO) */}
                         <article style={{ background: '#f8f9fa', padding: '1.5rem', borderRadius: '8px', borderLeft: '5px solid #8e44ad', marginBottom: '2rem' }}>
                             <h4 style={{ color: '#8e44ad', marginTop: 0 }}>📡 Monitor de Cola Predictiva (Tiempo Real)</h4>
                             <p style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>El algoritmo está evaluando los hábitos de consumo de los siguientes usuarios para enviar sugerencias:</p>
@@ -304,17 +333,43 @@ export default function AdminDashboard() {
                                 <tr>
                                     <th>Usuario Objetivo</th>
                                     <th>Estado del Motor</th>
-                                    <th>Tiempo Estimado de Disparo</th>
+                                    <th>Tiempo Restante</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {usersList.filter(u => u.role?.roleName === 'USER').slice(0, 3).map((u, index) => (
-                                    <tr key={u.id}>
-                                        <td><strong>{u.name}</strong><br/><small>{u.email}</small></td>
-                                        <td><span style={{ color: '#f39c12', fontWeight: 'bold' }}>Evaluando historial...</span></td>
-                                        <td>En {15 * (index + 1)} minutos</td>
-                                    </tr>
-                                ))}
+                                {predictiveQueue.length === 0 ? (
+                                    <tr><td colSpan="3" style={{textAlign: 'center'}}>No hay notificaciones en cola.</td></tr>
+                                ) : (
+                                    predictiveQueue.map((u) => {
+                                        const timeLeft = Math.max(0, u.targetTime - currentTime);
+                                        const isSent = timeLeft <= 0;
+
+                                        const minutes = Math.floor(timeLeft / 60000);
+                                        const seconds = Math.floor((timeLeft % 60000) / 1000);
+
+                                        return (
+                                            <tr key={u.id}>
+                                                <td><strong>{u.name}</strong><br/><small>{u.email}</small></td>
+                                                <td>
+                                                    {isSent ? (
+                                                        <span style={{ color: '#27ae60', fontWeight: 'bold' }}>¡Notificación Enviada! ✔️</span>
+                                                    ) : (
+                                                        <span style={{ color: '#f39c12', fontWeight: 'bold' }}>Calculando variables... ⚙️</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {isSent ? (
+                                                        <span style={{ color: '#7f8c8d' }}>Completado</span>
+                                                    ) : (
+                                                        <span style={{fontFamily: 'monospace', fontSize: '1.1rem', color: '#e74c3c'}}>
+                                                            ⏳ {minutes}m {seconds < 10 ? '0' : ''}{seconds}s
+                                                        </span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                                 </tbody>
                             </table>
                             <small style={{display: 'block', marginTop: '1rem', color: '#95a5a6'}}>
