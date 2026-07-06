@@ -36,13 +36,14 @@ FROM generate_series(1, 20) AS i
     ON CONFLICT DO NOTHING;
 
 -- 5. Generación masiva de 2000 Órdenes Históricas (Distribuidas aleatoriamente)
-INSERT INTO order_logs (id, item_name, order_day_of_week, order_time, restaurant_id, user_id)
+INSERT INTO order_logs (id, item_name, order_day_of_week, order_date, order_time, restaurant_id, user_id)
 SELECT
     i,
     CASE (i % 4) WHEN 0 THEN 'Hamburguesa' WHEN 1 THEN 'Pizza' WHEN 2 THEN 'Ensalada' ELSE 'Almuerzo' END,
-    CASE (i % 5) WHEN 0 THEN 1 WHEN 1 THEN 2 WHEN 2 THEN 3 WHEN 3 THEN 4 ELSE 5 END, -- Lunes(1) a Viernes(5)
-    time '12:00:00' + random() * (time '14:30:00' - time '12:00:00'), -- Horas aleatorias entre 12:00 y 14:30
-    (random() * 19 + 501)::int, -- ID aleatorio de restaurante (501 a 520)
-    (random() * 499 + 2)::int  -- ID aleatorio de estudiante (2 a 501)
+    CASE (i % 5) WHEN 0 THEN 1 WHEN 1 THEN 2 WHEN 2 THEN 3 WHEN 3 THEN 4 ELSE 5 END,
+    CURRENT_DATE, -- Se agregó la fecha obligatoria
+    time '12:00:00' + random() * (time '14:30:00' - time '12:00:00'),
+    (random() * 19 + 501)::int,
+    (random() * 499 + 2)::int
 FROM generate_series(1, 2000) AS i
     ON CONFLICT DO NOTHING;
