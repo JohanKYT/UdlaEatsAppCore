@@ -57,19 +57,32 @@ export default function AdminDashboard() {
             }
         };
 
-        // LÓGICA PARA CONSUMIR LA MATEMÁTICA REAL DEL BACKEND
+        // LÓGICA PARA CONSUMIR LA MATEMÁTICA REAL DEL BACKEND (CON ORDENAMIENTO INTELIGENTE)
         const fetchPredictiveQueue = async () => {
             try {
                 const response = await api.get('/admin/predictive-queue');
                 const queueData = response.data;
 
-                // Convertimos la hora que mandó Java ("14:28") a un Timestamp real de JS para hoy
+                // 1. Mapeamos agregando el timestamp correspondiente a hoy
                 const queueWithTimestamps = queueData.map(item => {
                     const timeParts = item.targetTime.split(':');
                     const targetDate = new Date();
                     targetDate.setHours(parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), timeParts[2] ? parseInt(timeParts[2], 10) : 0, 0);
 
                     return { ...item, targetTimestamp: targetDate.getTime() };
+                });
+
+                // 2. ORDENAMIENTO: Pendientes primero (tiempo restante > 0 y alreadySent es false)
+                queueWithTimestamps.sort((a, b) => {
+                    const aSent = a.alreadySent || (a.targetTimestamp - Date.now() <= 0);
+                    const bSent = b.alreadySent || (b.targetTimestamp - Date.now() <= 0);
+
+                    // Si uno está enviado y el otro no, el no enviado va primero
+                    if (!aSent && bSent) return -1;
+                    if (aSent && !bSent) return 1;
+
+                    // Si ambos tienen el mismo estado de envío, ordenamos cronológicamente por hora programada
+                    return a.targetTimestamp - b.targetTimestamp;
                 });
 
                 setPredictiveQueue(queueWithTimestamps);
@@ -162,7 +175,7 @@ export default function AdminDashboard() {
             await api.post('/admin/force-predictive-engine');
             alert("🚀 ¡Motor Predictivo ejecutado! Las notificaciones han sido generadas.");
 
-            // Recargamos la tabla para que lea que "alreadySent" ahora es true
+            // Recargamos la tabla manteniendo el ordenamiento inteligente actualizado
             if (activeTab === 'notifications') {
                 const response = await api.get('/admin/predictive-queue');
                 const queueData = response.data.map(item => {
@@ -171,6 +184,16 @@ export default function AdminDashboard() {
                     targetDate.setHours(parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), timeParts[2] ? parseInt(timeParts[2], 10) : 0, 0);
                     return { ...item, targetTimestamp: targetDate.getTime() };
                 });
+
+                // Ordenamos tras forzar (todos irán al fondo porque ya se enviaron)
+                queueData.sort((a, b) => {
+                    const aSent = a.alreadySent || (a.targetTimestamp - Date.now() <= 0);
+                    const bSent = b.alreadySent || (b.targetTimestamp - Date.now() <= 0);
+                    if (!aSent && bSent) return -1;
+                    if (aSent && !bSent) return 1;
+                    return a.targetTimestamp - b.targetTimestamp;
+                });
+
                 setPredictiveQueue(queueData);
             }
         } catch (error) {
@@ -338,10 +361,10 @@ export default function AdminDashboard() {
                             </button>
                         </header>
 
-                        {/* EL MONITOR PREDICTIVO VISUAL PARA LA DEFENSA (CONECTADO A LA MATEMÁTICA REAL) */}
+                        {/* EL MONITOR PREDICTIVO VISUAL (CON ORDENAMIENTO INTELIGENTE EN TIEMPO REAL) */}
                         <article style={{ background: '#f8f9fa', padding: '1.5rem', borderRadius: '8px', borderLeft: '5px solid #8e44ad', marginBottom: '2rem' }}>
                             <h4 style={{ color: '#8e44ad', marginTop: 0 }}>📡 Monitor de Cola Predictiva (Tiempo Real)</h4>
-                            <p style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>El algoritmo inteligente ha calculado que los siguientes usuarios están próximos a realizar su consumo habitual de hoy:</p>
+                            <p style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>El algoritmo inteligente mantiene las alertas próximas arriba y envía al fondo a los usuarios ya procesados:</p>
 
                             <table className={styles.adminTable} style={{ marginTop: '1rem', background: 'white' }}>
                                 <thead>
@@ -356,29 +379,29 @@ export default function AdminDashboard() {
                                     <tr><td colSpan="3" style={{textAlign: 'center', padding: '2rem'}}>No hay patrones de consumo identificados para el día de hoy, o todos los usuarios ya fueron notificados.</td></tr>
                                 ) : (
                                     predictiveQueue.map((u) => {
-                                        // La cuenta regresiva real basada en la diferencia de horas
                                         const timeLeft = Math.max(0, u.targetTimestamp - currentTime);
-
-                                        // Si ya se envió hoy o la cuenta llegó a cero, está enviado
                                         const isSent = u.alreadySent || timeLeft <= 0;
 
-                                        // Matemáticas de conversión a formato visual
                                         const totalMinutes = Math.floor(timeLeft / 60000);
                                         const hours = Math.floor(totalMinutes / 60);
                                         const minutes = totalMinutes % 60;
                                         const seconds = Math.floor((timeLeft % 60000) / 1000);
 
                                         return (
-                                            <tr key={u.userId}>
-                                                <td><strong>{u.userName}</strong><br/><small>{u.userEmail}</small></td>
+                                            <tr key={u.userId} style={{ backgroundColor: isSent ? '#fdfefe' : 'transparent', opacity: isSent ? 0.75 : 1 }}>
                                                 <td>
-                                                    <span style={{ color: '#34495e', fontWeight: 'bold' }}>🕒 {u.targetTime}</span>
+                                                    <strong>{u.userName}</strong>
+                                                    {isSent && <span style={{fontSize: '0.75rem', backgroundColor: '#e2f0d9', color: '#385723', padding: '2px 6px', borderRadius: '4px', marginLeft: '8px'}}>Procesado</span>}
+                                                    <br/><small>{u.userEmail}</small>
+                                                </td>
+                                                <td>
+                                                    <span style={{ color: isSent ? '#7f8c8d' : '#34495e', fontWeight: 'bold' }}>🕒 {u.targetTime}</span>
                                                 </td>
                                                 <td>
                                                     {isSent ? (
                                                         <span style={{ color: '#27ae60', fontWeight: 'bold' }}>¡Notificación Enviada! ✔️</span>
                                                     ) : (
-                                                        <span style={{fontFamily: 'monospace', fontSize: '1.1rem', color: '#e74c3c'}}>
+                                                        <span style={{fontFamily: 'monospace', fontSize: '1.1rem', color: '#e74c3c', fontWeight: 'bold'}}>
                                                             ⏳ {hours > 0 ? `${hours}h ` : ''}{minutes}m {seconds < 10 ? '0' : ''}{seconds}s
                                                         </span>
                                                     )}
