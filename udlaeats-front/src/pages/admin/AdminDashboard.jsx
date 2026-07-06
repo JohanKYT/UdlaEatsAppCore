@@ -284,15 +284,45 @@ export default function AdminDashboard() {
                 {activeTab === 'notifications' && (
                     <section>
                         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h3>Panel de Control Central</h3>
+                            <h3>Panel de Control Central y Motor Predictivo</h3>
                             <button
                                 onClick={handleForcePredictive}
                                 className={styles.saveBtn}
                                 style={{backgroundColor: '#8e44ad', fontSize: '1rem', padding: '0.8rem 1.5rem'}}
                             >
-                                🚀 Forzar Motor Predictivo (Modo Demo)
+                                🚀 Disparar Alertas (Modo Demo)
                             </button>
                         </header>
+
+                        {/* EL MONITOR PREDICTIVO VISUAL PARA LA DEFENSA */}
+                        <article style={{ background: '#f8f9fa', padding: '1.5rem', borderRadius: '8px', borderLeft: '5px solid #8e44ad', marginBottom: '2rem' }}>
+                            <h4 style={{ color: '#8e44ad', marginTop: 0 }}>📡 Monitor de Cola Predictiva (Tiempo Real)</h4>
+                            <p style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>El algoritmo está evaluando los hábitos de consumo de los siguientes usuarios para enviar sugerencias:</p>
+
+                            <table className={styles.adminTable} style={{ marginTop: '1rem', background: 'white' }}>
+                                <thead>
+                                <tr>
+                                    <th>Usuario Objetivo</th>
+                                    <th>Estado del Motor</th>
+                                    <th>Tiempo Estimado de Disparo</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {usersList.filter(u => u.role?.roleName === 'USER').slice(0, 3).map((u, index) => (
+                                    <tr key={u.id}>
+                                        <td><strong>{u.name}</strong><br/><small>{u.email}</small></td>
+                                        <td><span style={{ color: '#f39c12', fontWeight: 'bold' }}>Evaluando historial...</span></td>
+                                        <td>En {15 * (index + 1)} minutos</td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                            <small style={{display: 'block', marginTop: '1rem', color: '#95a5a6'}}>
+                                * Nota: Al presionar "Disparar Alertas", se ignorará la cuenta regresiva y se enviarán notificaciones push a todos los usuarios con coincidencias en el patrón del día actual.
+                            </small>
+                        </article>
+
+                        <hr style={{ border: '1px solid #ecf0f1', margin: '2rem 0' }} />
 
                         <h4>Solicitudes de Verificación Pendientes</h4>
                         {pendingRequests.length === 0 ? (

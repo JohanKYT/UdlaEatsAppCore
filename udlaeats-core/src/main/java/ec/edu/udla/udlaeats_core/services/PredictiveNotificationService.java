@@ -60,7 +60,7 @@ public class PredictiveNotificationService {
 
                 boolean alreadySentToday = notificationRepository.existsByUserIdAndCreatedAtBetween(user.getId(), startOfDay, endOfDay);
 
-                if (!alreadySentToday) {
+                /*if (!alreadySentToday) {
                     List<String> top2Items = getTopTwoItems(userHistory);
                     String itemsString = String.join(" o ", top2Items);
 
@@ -84,6 +84,28 @@ public class PredictiveNotificationService {
                 } else {
                     // Solo para debug en consola (puedes borrar esta línea luego)
                     System.out.println(user.getEmail() + " ya recibió su notificación predictiva hoy.");
+                }*/
+                if (!alreadySentToday || isDemoMode) {
+                    List<String> top2Items = getTopTwoItems(userHistory);
+                    String itemsString = String.join(" o ", top2Items);
+
+                    String urgencyPhrase = predictedTraffic.equalsIgnoreCase("LOW")
+                            ? "¡El restaurante está casi vacío, córrele!"
+                            : "Va a haber fila pronto, anticípate.";
+
+                    String alertMessage = "¡Hola " + user.getName() + "! El restaurante está abierto. Sueles pedir "
+                            + itemsString + " en " + favoriteRestaurant.getCampusLocation() + " a esta hora. " + urgencyPhrase;
+
+                    Notification newNotification = new Notification();
+                    newNotification.setUser(user);
+                    newNotification.setMessage(alertMessage);
+                    newNotification.setRecommendedItems(itemsString);
+                    newNotification.setConverted(false);
+                    newNotification.setCreatedAt(LocalDateTime.now());
+
+                    notificationRepository.save(newNotification);
+
+                    System.out.println("Notificación predictiva enviada a: " + user.getEmail() + " | Modo Demo: " + isDemoMode);
                 }
             }
         }

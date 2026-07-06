@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import styles from './User.module.css';
@@ -26,6 +26,9 @@ export default function UserDashboard() {
     const [availableMenus, setAvailableMenus] = useState([]);
     const [notifications, setNotifications] = useState([]);
     const [myOrders, setMyOrders] = useState([]);
+
+    // NUEVO ESTADO: Restaurante seleccionado
+    const [selectedRestaurant, setSelectedRestaurant] = useState(null);
 
     const fetchAllMenus = async () => {
         try {
@@ -63,6 +66,23 @@ export default function UserDashboard() {
             return () => clearInterval(interval);
         }
     }, [activeTab, userProfile.id]);
+
+    // LÓGICA DE AGRUPACIÓN: Extraer restaurantes únicos del menú global
+    const uniqueRestaurants = useMemo(() => {
+        const map = new Map();
+        availableMenus.forEach(item => {
+            if (item.restaurant && !map.has(item.restaurant.id)) {
+                map.set(item.restaurant.id, item.restaurant);
+            }
+        });
+        return Array.from(map.values());
+    }, [availableMenus]);
+
+    // LÓGICA DE FILTRADO: Platillos del restaurante seleccionado
+    const restaurantMenu = useMemo(() => {
+        if (!selectedRestaurant) return [];
+        return availableMenus.filter(item => item.restaurant?.id === selectedRestaurant.id);
+    }, [availableMenus, selectedRestaurant]);
 
     const handleProfileChange = (e) => {
         setUserProfile({ ...userProfile, [e.target.name]: e.target.value });
@@ -120,6 +140,7 @@ export default function UserDashboard() {
             alert("✅ ¡Sugerencia aceptada! Redirigiendo al menú para que hagas tu pedido.");
             fetchNotifications();
             setActiveTab('order-now');
+            setSelectedRestaurant(null); // Resetea la vista para que elija el restaurante
         } catch (error) {
             console.error("Error al aceptar notificación", error);
         }
@@ -135,7 +156,7 @@ export default function UserDashboard() {
             <nav className={styles.topNav}>
                 <h1>UdlaEats Campus</h1>
                 <section className={styles.navLinks}>
-                    <button onClick={() => setActiveTab('order-now')} className={activeTab === 'order-now' ? styles.activeLink : styles.linkBtn}>Realizar Pedido</button>
+                    <button onClick={() => { setActiveTab('order-now'); setSelectedRestaurant(null); }} className={activeTab === 'order-now' ? styles.activeLink : styles.linkBtn}>Realizar Pedido</button>
                     <button onClick={() => setActiveTab('my-orders')} className={activeTab === 'my-orders' ? styles.activeLink : styles.linkBtn}>Mis Pedidos</button>
                     <button onClick={() => setActiveTab('profile')} className={activeTab === 'profile' ? styles.activeLink : styles.linkBtn}>Mi Perfil</button>
                     <button onClick={() => setActiveTab('notifications')} className={activeTab === 'notifications' ? styles.activeLink : styles.notificationBtn}>
@@ -171,33 +192,68 @@ export default function UserDashboard() {
 
                 {activeTab === 'order-now' && (
                     <section>
-                        <header className={styles.sectionHeader}>
-                            <h3>Menús disponibles en el Campus</h3>
-                        </header>
-                        <section className={styles.menuGrid}>
-                            {availableMenus.length === 0 ? <p>Cargando opciones...</p> : (
-                                availableMenus.map(item => (
-                                    <article key={item.id} className={styles.menuStockCard}>
-                                        <figure className={styles.menuImageContainer}>
-                                            <img src={item.imageUrl} alt={item.name} className={styles.menuImage} loading="lazy" />
-                                            <span className={styles.categoryBadge}>{item.category}</span>
-                                        </figure>
-                                        <section className={styles.menuDetails}>
-                                            <h4>{item.name}</h4>
-                                            <p className={styles.restaurantName}>📍 {item.restaurant?.user?.name || "Local Udla"}</p>
-                                            <p className={styles.menuDescription}>{item.description}</p>
-                                            <footer className={styles.orderFooter}>
-                                                <p className={styles.menuPrice}>${item.price.toFixed(2)}</p>
-                                                <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
-                                                    <small>Quedan: {item.stockQuantity}</small>
-                                                    <button onClick={() => handleOrder(item)} className={styles.orderBtn}>Pedir Ahora</button>
-                                                </div>
-                                            </footer>
-                                        </section>
-                                    </article>
-                                ))
-                            )}
-                        </section>
+                        {/* VISTA 1: LISTADO DE RESTAURANTES */}
+                        {!selectedRestaurant ? (
+                            <>
+                                <header className={styles.sectionHeader}>
+                                    <h3>Selecciona un Restaurante</h3>
+                                    <p>Campus: {userProfile.campus || 'General'}</p>
+                                </header>
+                                <section className={styles.menuGrid}>
+                                    {uniqueRestaurants.length === 0 ? <p>Cargando locales...</p> : (
+                                        uniqueRestaurants.map(rest => (
+                                            <article key={rest.id} className={styles.menuStockCard} style={{cursor: 'pointer', border: '2px solid transparent'}} onClick={() => setSelectedRestaurant(rest)} onMouseOver={(e) => e.currentTarget.style.borderColor = '#3498db'} onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}>
+                                                <figure className={styles.menuImageContainer} style={{height: '120px', backgroundColor: '#ecf0f1', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                                                    <span style={{fontSize: '3rem'}}>🏪</span>
+                                                </figure>
+                                                <section className={styles.menuDetails} style={{textAlign: 'center'}}>
+                                                    <h4>{rest.user?.name || `Local ${rest.id}`}</h4>
+                                                    <p className={styles.restaurantName}>📍 {rest.campusLocation}</p>
+                                                    <p>Horario: {rest.openTime.substring(0,5)} - {rest.closeTime.substring(0,5)}</p>
+                                                    <button className={styles.orderBtn} style={{marginTop: '1rem', width: '100%'}}>Ver Menú</button>
+                                                </section>
+                                            </article>
+                                        ))
+                                    )}
+                                </section>
+                            </>
+                        ) : (
+                            /* VISTA 2: MENÚ DEL RESTAURANTE SELECCIONADO */
+                            <>
+                                <header className={styles.sectionHeader} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                    <section>
+                                        <h3>Menú de {selectedRestaurant.user?.name}</h3>
+                                        <p>📍 {selectedRestaurant.campusLocation}</p>
+                                    </section>
+                                    <button onClick={() => setSelectedRestaurant(null)} className={styles.cancelBtn} style={{padding: '0.5rem 1rem'}}>
+                                        ⬅ Volver a Locales
+                                    </button>
+                                </header>
+                                <section className={styles.menuGrid}>
+                                    {restaurantMenu.length === 0 ? <p>Este local no tiene platillos disponibles hoy.</p> : (
+                                        restaurantMenu.map(item => (
+                                            <article key={item.id} className={styles.menuStockCard}>
+                                                <figure className={styles.menuImageContainer}>
+                                                    <img src={item.imageUrl} alt={item.name} className={styles.menuImage} loading="lazy" />
+                                                    <span className={styles.categoryBadge}>{item.category}</span>
+                                                </figure>
+                                                <section className={styles.menuDetails}>
+                                                    <h4>{item.name}</h4>
+                                                    <p className={styles.menuDescription}>{item.description}</p>
+                                                    <footer className={styles.orderFooter}>
+                                                        <p className={styles.menuPrice}>${item.price.toFixed(2)}</p>
+                                                        <menu style={{display: 'flex', gap: '10px', alignItems: 'center', padding: 0, margin: 0}}>
+                                                            <small>Quedan: {item.stockQuantity}</small>
+                                                            <button onClick={() => handleOrder(item)} className={styles.orderBtn}>Pedir Ahora</button>
+                                                        </menu>
+                                                    </footer>
+                                                </section>
+                                            </article>
+                                        ))
+                                    )}
+                                </section>
+                            </>
+                        )}
                     </section>
                 )}
 
