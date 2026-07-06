@@ -1,13 +1,13 @@
 -- 1. Inserción de Roles Base
 INSERT INTO roles (id, role_name) VALUES (1, 'ADMIN'), (2, 'USER'), (3, 'RESTAURANT') ON CONFLICT DO NOTHING;
 
--- 2. Administrador Global
-INSERT INTO users (id, name, email, password, role_id, account_status, penalty_points, phone)
-VALUES (1, 'Administrador Global', 'admin.core@udla.edu.ec', 'AdminUdla2026.', 1, 'APPROVED', 0, '0999999999')
+-- 2. Administrador Global (AQUÍ SE AGREGÓ EL CAMPUS)
+INSERT INTO users (id, name, email, password, role_id, account_status, penalty_points, phone, campus)
+VALUES (1, 'Administrador Global', 'admin.core@udla.edu.ec', 'AdminUdla2026.', 1, 'APPROVED', 0, '0999999999', 'UDLA Park')
     ON CONFLICT DO NOTHING;
 
--- 3. Generación masiva de Estudiantes (IDs 2 al 500)
-INSERT INTO users (id, name, email, password, role_id, account_status, penalty_points, phone)
+-- 3. Generación masiva de Estudiantes (AQUÍ SE AGREGÓ EL CAMPUS)
+INSERT INTO users (id, name, email, password, role_id, account_status, penalty_points, phone, campus)
 SELECT
     i,
     'Estudiante Udla ' || i,
@@ -16,11 +16,12 @@ SELECT
     2,
     'APPROVED',
     0,
-    '098123456' || (i % 9)
+    '098123456' || (i % 9),
+    CASE WHEN i % 2 = 0 THEN 'UDLA Park' ELSE 'Granados' END
 FROM generate_series(2, 500) AS i
     ON CONFLICT DO NOTHING;
 
--- 4. Generación masiva de Usuarios Restaurante (IDs 501 al 520)
+-- 4. Generación masiva de Usuarios Restaurante
 INSERT INTO users (id, name, email, password, role_id, account_status, penalty_points, campus, opening_time, closing_time, phone)
 SELECT
     i,
@@ -37,7 +38,7 @@ SELECT
 FROM generate_series(501, 520) AS i
     ON CONFLICT DO NOTHING;
 
--- 5. Perfiles de Restaurante y sincronización de Teléfonos (IDs 1 al 20)
+-- 5. Perfiles de Restaurante y sincronización de Teléfonos
 INSERT INTO restaurant_info (id, user_id, campus_location, open_time, close_time, phone_number, is_verified_by_admin)
 SELECT
     i - 500,
@@ -45,7 +46,7 @@ SELECT
     CASE WHEN i % 2 = 0 THEN 'UDLA Park' ELSE 'Granados' END,
     '07:00:00',
     '19:30:00',
-    '097111222' || (i % 9), -- Mismo teléfono que en users
+    '097111222' || (i % 9),
     true
 FROM generate_series(501, 520) AS i
     ON CONFLICT DO NOTHING;
@@ -63,7 +64,7 @@ SELECT (i * 4) - 1, i, 'Ensalada César', 'Fresca ensalada con pollo a la planch
 INSERT INTO menu_items (id, restaurant_id, name, description, price, category, is_available, stock_quantity, image_url)
 SELECT (i * 4), i, 'Almuerzo Ejecutivo', 'Sopa, plato fuerte y jugo del día.', 3.50, 'Almuerzos', true, 60, 'https://images.unsplash.com/photo-1547592180-85f173990554' FROM generate_series(1, 20) AS i ON CONFLICT DO NOTHING;
 
--- 7. Historial de 2000 Órdenes (Repartidas en los últimos 30 días)
+-- 7. Historial de 2000 Órdenes
 INSERT INTO order_logs (id, item_name, order_day_of_week, order_date, order_time, status, restaurant_id, user_id)
 SELECT
     i,
@@ -77,7 +78,7 @@ SELECT
 FROM generate_series(1, 2000) AS i
 ON CONFLICT DO NOTHING;
 
--- 8. Órdenes Frescas de HOY (Para la Cola de Pedidos PENDING)
+-- 8. Órdenes Frescas de HOY
 INSERT INTO order_logs (id, item_name, order_day_of_week, order_date, order_time, status, restaurant_id, user_id)
 SELECT
     i,
@@ -91,7 +92,7 @@ SELECT
 FROM generate_series(2001, 2050) AS i
     ON CONFLICT DO NOTHING;
 
--- 9. Historial de Tráfico (Para engañar al Motor Predictivo y disparar alertas HIGH)
+-- 9. Historial de Tráfico (Para el Motor Predictivo)
 INSERT INTO traffic_logs (id, restaurant_id, traffic_level, recorded_date, recorded_day_of_week, recorded_time)
 SELECT
     i,
