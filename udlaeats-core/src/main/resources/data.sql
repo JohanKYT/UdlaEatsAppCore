@@ -103,3 +103,10 @@ SELECT
     LOCALTIME
 FROM generate_series(1, 100) AS i
 ON CONFLICT DO NOTHING;
+
+-- 10. Actualizar secuencias automáticas (Para evitar el Error 500 al crear nuevos registros en Producción)
+SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
+SELECT setval(pg_get_serial_sequence('restaurant_info', 'id'), (SELECT MAX(id) FROM restaurant_info));
+SELECT setval(pg_get_serial_sequence('menu_items', 'id'), (SELECT MAX(id) FROM menu_items));
+SELECT setval(pg_get_serial_sequence('order_logs', 'id'), (SELECT MAX(id) FROM order_logs));
+SELECT setval(pg_get_serial_sequence('traffic_logs', 'id'), (SELECT MAX(id) FROM traffic_logs));
