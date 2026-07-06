@@ -10,9 +10,9 @@ export default function AdminDashboard() {
     // Estados de datos
     const [pendingRequests, setPendingRequests] = useState([]);
     const [usersList, setUsersList] = useState([]);
-    const [systemStats, setSystemStats] = useState(null); // NUEVO ESTADO PARA EL JSON
+    const [systemStats, setSystemStats] = useState(null);
 
-    // Estados de UI (Modo Dios)
+    // Estados de UI
     const [visiblePasswords, setVisiblePasswords] = useState({});
     const [editingUser, setEditingUser] = useState(null);
 
@@ -23,28 +23,33 @@ export default function AdminDashboard() {
             try {
                 const response = await api.get('/admin/pending-restaurants');
                 setPendingRequests(response.data);
-            } catch (error) { console.error("Error cargando solicitudes", error); }
+            } catch (error) {
+                console.error("Error cargando solicitudes", error);
+            }
         };
 
         const fetchAllUsers = async () => {
             try {
                 const response = await api.get('/admin/users');
                 setUsersList(response.data);
-            } catch (error) { console.error("Error cargando usuarios", error); }
+            } catch (error) {
+                console.error("Error cargando usuarios", error);
+            }
         };
 
-        // NUEVA FUNCIÓN PARA CONSUMIR EL API JSON
         const fetchSystemStats = async () => {
             try {
                 const response = await api.get('/admin/reports/summary');
                 setSystemStats(response.data.data);
-            } catch (error) { console.error("Error al consumir el API JSON", error); }
+            } catch (error) {
+                console.error("Error al consumir el API JSON", error);
+            }
         };
 
-        // Lógica de ruteo interno (Patrón State/Observer)
+        // Lógica de ruteo interno
         if (activeTab === 'notifications') {
             fetchPendingRestaurants();
-        } else if (activeTab === 'users') {
+        } else if (activeTab === 'users' || activeTab === 'restaurants') {
             fetchAllUsers();
         } else if (activeTab === 'reports') {
             fetchSystemStats();
@@ -62,7 +67,9 @@ export default function AdminDashboard() {
                 alert("🗑️ Usuario eliminado.");
                 const res = await api.get('/admin/users');
                 setUsersList(res.data);
-            } catch (error) { alert("❌ Error al eliminar"); }
+            } catch (error) {
+                alert("❌ Error al eliminar");
+            }
         }
     };
 
@@ -77,7 +84,9 @@ export default function AdminDashboard() {
             setEditingUser(null);
             const res = await api.get('/admin/users');
             setUsersList(res.data);
-        } catch (error) { alert("❌ Error al actualizar"); }
+        } catch (error) {
+            alert("❌ Error al actualizar");
+        }
     };
 
     const handleLogout = () => {
@@ -97,7 +106,9 @@ export default function AdminDashboard() {
             alert("✅ Restaurante aprobado exitosamente.");
             const response = await api.get('/admin/pending-restaurants');
             setPendingRequests(response.data);
-        } catch (error) { alert("❌ Error al aprobar"); }
+        } catch (error) {
+            alert("❌ Error al aprobar");
+        }
     };
 
     const handleReject = async (userId) => {
@@ -108,7 +119,18 @@ export default function AdminDashboard() {
                 alert("Restaurante rechazado.");
                 const response = await api.get('/admin/pending-restaurants');
                 setPendingRequests(response.data);
-            } catch (error) { alert("❌ Error al rechazar"); }
+            } catch (error) {
+                alert("❌ Error al rechazar");
+            }
+        }
+    };
+
+    const handleForcePredictive = async () => {
+        try {
+            await api.post('/admin/force-predictive-engine');
+            alert("🚀 ¡Motor Predictivo ejecutado! Las notificaciones han sido generadas.");
+        } catch (error) {
+            alert("❌ Error al ejecutar el motor.");
         }
     };
 
@@ -126,7 +148,7 @@ export default function AdminDashboard() {
             {editingUser && (
                 <section className={styles.modalOverlay} role="dialog" aria-modal="true">
                     <article className={styles.modalContent}>
-                        <h3>Editar Usuario (Modo Dios)</h3>
+                        <h3>Editar Perfil (Modo Dios)</h3>
                         <form className={styles.modalForm} onSubmit={submitEditUser}>
                             <label>Nombre: <input type="text" name="name" value={editingUser.name || ''} onChange={handleEditChange} required /></label>
                             <label>Correo: <input type="email" name="email" value={editingUser.email || ''} onChange={handleEditChange} required /></label>
@@ -161,14 +183,11 @@ export default function AdminDashboard() {
                     Gestión Restaurantes
                 </button>
                 <button className={activeTab === 'notifications' ? styles.activeBtn : styles.navBtn} onClick={() => handleTabChange('notifications')}>
-                    Solicitudes Nuevas
+                    Control Central
                 </button>
-
-                {/* NUEVO BOTÓN AGREGADO AQUÍ */}
                 <button className={activeTab === 'reports' ? styles.activeBtn : styles.navBtn} onClick={() => handleTabChange('reports')}>
                     Métricas del Sistema
                 </button>
-
                 <button className={activeTab === 'profile' ? styles.activeBtn : styles.navBtn} onClick={() => handleTabChange('profile')}>
                     Mi Perfil Admin
                 </button>
@@ -180,7 +199,7 @@ export default function AdminDashboard() {
             <section className={styles.contentSection}>
                 {activeTab === 'users' && (
                     <section style={{overflowX: 'auto'}}>
-                        <h3>Usuarios del Sistema</h3>
+                        <h3>Estudiantes y Personal del Sistema</h3>
                         <table className={styles.adminTable}>
                             <thead>
                             <tr>
@@ -195,7 +214,7 @@ export default function AdminDashboard() {
                             </tr>
                             </thead>
                             <tbody>
-                            {usersList.map((u) => (
+                            {usersList.filter(u => u.role?.roleName !== 'RESTAURANT').map((u) => (
                                 <tr key={u.id}>
                                     <td>{u.name}</td>
                                     <td>{u.email}</td>
@@ -225,17 +244,59 @@ export default function AdminDashboard() {
                 )}
 
                 {activeTab === 'restaurants' && (
-                    <section>
+                    <section style={{overflowX: 'auto'}}>
                         <h3>Restaurantes Registrados</h3>
+                        <table className={styles.adminTable}>
+                            <thead>
+                            <tr>
+                                <th>Restaurante</th>
+                                <th>Correo</th>
+                                <th>Teléfono</th>
+                                <th>Campus</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {usersList.filter(u => u.role?.roleName === 'RESTAURANT').map((u) => (
+                                <tr key={u.id}>
+                                    <td>{u.name}</td>
+                                    <td>{u.email}</td>
+                                    <td>{u.phone || 'N/A'}</td>
+                                    <td>{u.campus || 'N/A'}</td>
+                                    <td>
+                                        <span style={{ color: u.accountStatus === 'APPROVED' ? '#27ae60' : u.accountStatus === 'PENDING' ? '#f39c12' : '#c0392b', fontWeight: 'bold' }}>
+                                            {u.accountStatus}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button className={`${styles.actionBtn} ${styles.editBtn}`} onClick={() => openEditModal(u)}>Editar</button>
+                                        <button className={`${styles.actionBtn} ${styles.deleteBtn}`} onClick={() => handleDeleteUser(u.id)}>Eliminar</button>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
                         <p>Control total de locales dentro de los campus de la UDLA.</p>
                     </section>
                 )}
 
                 {activeTab === 'notifications' && (
                     <section>
-                        <h3>Solicitudes de Verificación de Restaurantes</h3>
+                        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                            <h3>Panel de Control Central</h3>
+                            <button
+                                onClick={handleForcePredictive}
+                                className={styles.saveBtn}
+                                style={{backgroundColor: '#8e44ad', fontSize: '1rem', padding: '0.8rem 1.5rem'}}
+                            >
+                                🚀 Forzar Motor Predictivo (Modo Demo)
+                            </button>
+                        </header>
+
+                        <h4>Solicitudes de Verificación Pendientes</h4>
                         {pendingRequests.length === 0 ? (
-                            <p>No hay solicitudes pendientes en este momento.</p>
+                            <p>No hay solicitudes de restaurantes pendientes.</p>
                         ) : (
                             pendingRequests.map((req) => (
                                 <article key={req.id} className={styles.requestCard}>
@@ -252,7 +313,6 @@ export default function AdminDashboard() {
                     </section>
                 )}
 
-                {/* NUEVA SECCIÓN DE REPORTES (SIN DIVS) */}
                 {activeTab === 'reports' && (
                     <section>
                         <h3>Métricas y Reportes Globales (API JSON)</h3>
